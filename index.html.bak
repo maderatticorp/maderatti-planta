@@ -249,18 +249,17 @@ function rPedidos(D,p){
     card.appendChild(h("div",{style:{fontSize:"13px",lineHeight:"1.4",marginBottom:"4px"}},ped.descripcion));
     if(ped.novedad)card.appendChild(h("div",{style:{fontSize:"12px",color:"#C05252",marginTop:"4px",fontStyle:"italic"}},"⚠️ "+ped.novedad));
     if((ped.fotos||[]).length){const gr=h("div",{className:"photo-grid",style:{marginTop:"6px"}});ped.fotos.forEach(u=>gr.appendChild(h("img",{className:"photo-thumb",src:u,onClick:()=>{S.imgPrev=u;render()}})));card.appendChild(gr)}
-    if((ped.historial||[]).length&&D){const last=ped.historial[ped.historial.length-1];card.appendChild(h("div",{style:{fontSize:"10px",color:"#5A5347",marginTop:"6px"}},"📝 "+last.quien+" → "+last.a+" · "+new Date(last.fecha).toLocaleDateString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})))}
     const est=ped.estado||"Solicitado";
     if(est!=="Revisado"){
       const ch=h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap",marginTop:"8px"}});
       // Diego controls: Solicitado→Aprobado→Ordenado, and Con novedad→Ordenado
-      if(D){["Aprobado","Ordenado"].forEach(e=>ch.appendChild(h("button",{className:"btn-chip",style:{background:est===e?(EST_COL[e]||"")+"33":"",color:est===e?EST_COL[e]:"#8A8070"},onClick:()=>updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:e,historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:e,fecha:new Date().toISOString()}]}:x)}))},e)));
-        ch.appendChild(h("button",{className:"btn-chip",style:{background:est==="Entregado"?(EST_COL.Entregado)+"33":"",color:est==="Entregado"?EST_COL.Entregado:"#8A8070"},onClick:()=>updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:"Entregado",historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:"Entregado",fecha:new Date().toISOString()}]}:x)}))}, "Entregado"));
+      if(D){["Aprobado","Ordenado"].forEach(e=>ch.appendChild(h("button",{className:"btn-chip",style:{background:est===e?(EST_COL[e]||"")+"33":"",color:est===e?EST_COL[e]:"#8A8070"},onClick:()=>updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:e}:x)}))},e)));
+        ch.appendChild(h("button",{className:"btn-chip",style:{background:est==="Entregado"?(EST_COL.Entregado)+"33":"",color:est==="Entregado"?EST_COL.Entregado:"#8A8070"},onClick:()=>updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:"Entregado"}:x)}))}, "Entregado"));
       }
       // Planta: at Entregado, choose Revisado or Con novedad
       if(!D&&est==="Entregado"){
-        ch.appendChild(h("button",{className:"btn-sm",style:{background:"#4CAF7D",color:"#0D0B07",border:"none",fontSize:"11px",padding:"4px 10px"},onClick:()=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:"Revisado",historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:"Revisado",fecha:new Date().toISOString()}]}:x)}));toast("Marcado como revisado")}},"✓ Revisado"));
-        ch.appendChild(h("button",{className:"btn-sm",style:{background:"rgba(192,82,82,.15)",color:"#C05252",borderColor:"#C0525244",fontSize:"11px",padding:"4px 10px"},onClick:()=>{const nota=prompt("¿Qué problema tiene?");updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:"Con novedad",novedad:nota||"Sin detalle",historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:"Con novedad",fecha:new Date().toISOString(),nota:nota||"Sin detalle"}]}:x)}));toast("Novedad reportada")}},"✗ Con novedad"));
+        ch.appendChild(h("button",{className:"btn-sm",style:{background:"#4CAF7D",color:"#0D0B07",border:"none",fontSize:"11px",padding:"4px 10px"},onClick:()=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:"Revisado"}:x)}));toast("Marcado como revisado")}},"✓ Revisado"));
+        ch.appendChild(h("button",{className:"btn-sm",style:{background:"rgba(192,82,82,.15)",color:"#C05252",borderColor:"#C0525244",fontSize:"11px",padding:"4px 10px"},onClick:()=>{const nota=prompt("¿Qué problema tiene?");updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,estado:"Con novedad",novedad:nota||"Sin detalle"}:x)}));toast("Novedad reportada")}},"✗ Con novedad"));
       }
       // Photo button for everyone
       ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C9A84C"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,fotos:[...(x.fotos||[]),u]}:x)}))})})};i.click()}},"📷"));
@@ -272,7 +271,7 @@ function rPedidos(D,p){
       const sel=h("select",{className:"inp"});PROVS.forEach(pv=>{const o=h("option",{value:pv},pv);if(pv===S.npProv)o.selected=true;sel.appendChild(o)});sel.addEventListener("change",e=>S.npProv=e.target.value);form.appendChild(sel);
       const ta=h("textarea",{className:"inp",placeholder:"Descripción...",style:{height:"60px",marginTop:"8px"}});ta.value=S.npDesc;ta.addEventListener("input",e=>S.npDesc=e.target.value);form.appendChild(ta);
       const btns=h("div",{style:{display:"flex",gap:"8px",marginTop:"8px"}});
-      btns.appendChild(h("button",{className:"btn-sm",style:{flex:"1",background:"#C9A84C",color:"#0D0B07"},onClick:()=>{if(!S.npDesc.trim())return;updProj(p.id,pr=>({...pr,pedidos:[...(pr.pedidos||[]),{id:uid(),proveedor:S.npProv,descripcion:S.npDesc.trim(),estado:"Solicitado",fotos:[],novedad:"",historial:[{quien:S.userNombre,de:"—",a:"Solicitado",fecha:new Date().toISOString()}]}]}));S.npDesc="";S.showNP=false;toast("Pedido solicitado")}},"Guardar"));
+      btns.appendChild(h("button",{className:"btn-sm",style:{flex:"1",background:"#C9A84C",color:"#0D0B07"},onClick:()=>{if(!S.npDesc.trim())return;updProj(p.id,pr=>({...pr,pedidos:[...(pr.pedidos||[]),{id:uid(),proveedor:S.npProv,descripcion:S.npDesc.trim(),estado:"Solicitado",fotos:[],novedad:""}]}));S.npDesc="";S.showNP=false;toast("Pedido solicitado")}},"Guardar"));
       btns.appendChild(h("button",{className:"btn-sm",style:{flex:"1"},onClick:()=>{S.showNP=false;S.npDesc="";render()}},"Cancelar"));form.appendChild(btns);b.appendChild(form)}
   b.appendChild(h("button",{className:"btn-back",style:{marginTop:"16px"},onClick:()=>{S.vista="proyecto";render()}},"← Volver al proyecto"));app.appendChild(b)
 }
@@ -294,7 +293,6 @@ function rFaltantes(D,p){
     if(f.novedad)card.appendChild(h("div",{style:{fontSize:"12px",color:"#C05252",marginTop:"4px",fontStyle:"italic"}},"⚠️ "+f.novedad));
     if(stale)card.appendChild(h("div",{style:{fontSize:"11px",color:"#C05252",marginTop:"4px"}},h("span",{className:"alert-dot"}),"Sin movimiento hace "+daysSince+" días"));
     if((f.fotos||[]).length){const gr=h("div",{className:"photo-grid",style:{marginTop:"6px"}});f.fotos.forEach(u=>gr.appendChild(h("img",{className:"photo-thumb",src:u,onClick:()=>{S.imgPrev=u;render()}})));card.appendChild(gr)}
-    if((f.historial||[]).length&&D){const last=f.historial[f.historial.length-1];card.appendChild(h("div",{style:{fontSize:"10px",color:"#5A5347",marginTop:"6px"}},"📝 "+last.quien+" → "+last.a+" · "+new Date(last.fecha).toLocaleDateString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})))}
     if(!done){
       const ch=h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap",marginTop:"8px"}});
       // Diego: Visto, En gestión (+nota), Entregado
@@ -303,16 +301,16 @@ function rFaltantes(D,p){
           onClick:()=>{
             if(est==="En gestión"){
               const nota=prompt("Nota de gestión (ej: Pedido a Fernández, llega jueves):");
-              updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:est,notaGestion:nota||f.notaGestion||"",fechaEstado:new Date().toISOString().slice(0,10),historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:est,fecha:new Date().toISOString(),nota:nota||""}]}:x)}));
+              updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:est,notaGestion:nota||f.notaGestion||"",fechaEstado:new Date().toISOString().slice(0,10)}:x)}));
             }else{
-              updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:est,fechaEstado:new Date().toISOString().slice(0,10),historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:est,fecha:new Date().toISOString()}]}:x)}));
+              updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:est,fechaEstado:new Date().toISOString().slice(0,10)}:x)}));
             }
           }},est));
       })}
       // Planta: at Entregado, choose Revisado or Con novedad
       if(!D&&estado==="Entregado"){
-        ch.appendChild(h("button",{className:"btn-sm",style:{background:"#4CAF7D",color:"#0D0B07",border:"none",fontSize:"11px",padding:"4px 10px"},onClick:()=>{updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Revisado",resuelto:true,fechaEstado:new Date().toISOString().slice(0,10),historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:"Revisado",fecha:new Date().toISOString()}]}:x)}));toast("Revisado ✓")}},"✓ Revisado"));
-        ch.appendChild(h("button",{className:"btn-sm",style:{background:"rgba(192,82,82,.15)",color:"#C05252",borderColor:"#C0525244",fontSize:"11px",padding:"4px 10px"},onClick:()=>{const nota=prompt("¿Qué problema persiste?");updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Con novedad",novedad:nota||"Sin detalle",fechaEstado:new Date().toISOString().slice(0,10),historial:[...(x.historial||[]),{quien:S.userNombre,de:x.estado||"Solicitado",a:"Con novedad",fecha:new Date().toISOString(),nota:nota||"Sin detalle"}]}:x)}));toast("Novedad reportada")}},"✗ Con novedad"));
+        ch.appendChild(h("button",{className:"btn-sm",style:{background:"#4CAF7D",color:"#0D0B07",border:"none",fontSize:"11px",padding:"4px 10px"},onClick:()=>{updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Revisado",resuelto:true,fechaEstado:new Date().toISOString().slice(0,10)}:x)}));toast("Revisado ✓")}},"✓ Revisado"));
+        ch.appendChild(h("button",{className:"btn-sm",style:{background:"rgba(192,82,82,.15)",color:"#C05252",borderColor:"#C0525244",fontSize:"11px",padding:"4px 10px"},onClick:()=>{const nota=prompt("¿Qué problema persiste?");updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Con novedad",novedad:nota||"Sin detalle",fechaEstado:new Date().toISOString().slice(0,10)}:x)}));toast("Novedad reportada")}},"✗ Con novedad"));
       }
       if(D&&estado==="Entregado")ch.appendChild(h("div",{style:{fontSize:"10px",color:"#8A8070",fontStyle:"italic",width:"100%"}},"Esperando confirmación de planta"));
       card.appendChild(ch);
@@ -322,7 +320,7 @@ function rFaltantes(D,p){
   const ta=h("textarea",{className:"inp",placeholder:"Qué falta o qué problema hay...",style:{height:"60px"}});ta.value=S.nFalt;ta.addEventListener("input",e=>S.nFalt=e.target.value);form.appendChild(ta);
   if(S.faltFotos.length){const gr=h("div",{className:"photo-grid",style:{marginTop:"8px"}});S.faltFotos.forEach((u,i)=>{const wrap=h("div",{style:{position:"relative"}});wrap.appendChild(h("img",{className:"photo-thumb",src:u}));wrap.appendChild(h("button",{style:{position:"absolute",top:"-4px",right:"-4px",width:"18px",height:"18px",borderRadius:"9px",background:"#C05252",color:"#fff",border:"none",fontSize:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},onClick:()=>{S.faltFotos.splice(i,1);render()}},"✕"));gr.appendChild(wrap)});form.appendChild(gr)}
   form.appendChild(h("button",{className:"btn-sm",style:{marginTop:"8px",width:"100%"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.capture="environment";i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{S.faltFotos.push(u);render()})})};i.click()}},"📷 Agregar foto"));
-  form.appendChild(h("button",{className:"btn-gold",style:{marginTop:"8px"},onClick:()=>{if(!S.nFalt.trim())return;updProj(p.id,pr=>({...pr,faltantes:[...(pr.faltantes||[]),{id:uid(),texto:S.nFalt.trim(),fecha:new Date().toISOString().slice(0,10),estado:"Solicitado",resuelto:false,autor:S.userNombre,fotos:S.faltFotos,notaGestion:"",novedad:"",fechaEstado:new Date().toISOString().slice(0,10),historial:[{quien:S.userNombre,de:"—",a:"Solicitado",fecha:new Date().toISOString()}]}]}));S.nFalt="";S.faltFotos=[];toast("Faltante reportado")}},"Reportar"));b.appendChild(form);
+  form.appendChild(h("button",{className:"btn-gold",style:{marginTop:"8px"},onClick:()=>{if(!S.nFalt.trim())return;updProj(p.id,pr=>({...pr,faltantes:[...(pr.faltantes||[]),{id:uid(),texto:S.nFalt.trim(),fecha:new Date().toISOString().slice(0,10),estado:"Solicitado",resuelto:false,autor:S.userNombre,fotos:S.faltFotos,notaGestion:"",novedad:"",fechaEstado:new Date().toISOString().slice(0,10)}]}));S.nFalt="";S.faltFotos=[];toast("Faltante reportado")}},"Reportar"));b.appendChild(form);
   b.appendChild(h("button",{className:"btn-back",style:{marginTop:"16px"},onClick:()=>{S.vista="proyecto";render()}},"← Volver al proyecto"));app.appendChild(b)
 }
 
@@ -389,12 +387,11 @@ function rAseo(){
 
 function rPendientes(){
   app.appendChild(hdr("Pendientes"));const b=h("div",{className:"app-body"});
-  const D=S.rol==="diego";
   // Collect all pending items across projects
   const items=[];
   S.projects.forEach(p=>{
-    (p.pedidos||[]).forEach(ped=>{if(ped.estado!=="Revisado")items.push({tipo:"📦",proj:p.cliente,pid:p.id,pdid:p._did,texto:ped.descripcion||ped.proveedor,estado:ped.estado||"Solicitado",novedad:ped.novedad,id:ped.id,field:"pedidos",historial:ped.historial||[]})});
-    (p.faltantes||[]).forEach(f=>{if((f.estado||"Solicitado")!=="Revisado")items.push({tipo:"⚠️",proj:f.autor||p.cliente,pid:p.id,pdid:p._did,texto:f.texto,estado:f.estado||"Solicitado",novedad:f.novedad,notaGestion:f.notaGestion,id:f.id,field:"faltantes",historial:f.historial||[]})});
+    (p.pedidos||[]).forEach(ped=>{if(ped.estado!=="Revisado")items.push({tipo:"📦",proj:p.cliente,pid:p.id,texto:ped.descripcion||ped.proveedor,estado:ped.estado||"Solicitado",novedad:ped.novedad,id:ped.id,field:"pedidos"})});
+    (p.faltantes||[]).forEach(f=>{if((f.estado||"Solicitado")!=="Revisado")items.push({tipo:"⚠️",proj:f.autor||p.cliente,pid:p.id,texto:f.texto,estado:f.estado||"Solicitado",novedad:f.novedad,notaGestion:f.notaGestion,id:f.id,field:"faltantes"})});
   });
   // Sort: Con novedad first, then Solicitado, then rest
   const order={"Con novedad":0,Solicitado:1,Visto:2,"En gestión":3,Entregado:4};
@@ -409,22 +406,17 @@ function rPendientes(){
   if(!items.length)b.appendChild(h("div",{style:{fontSize:"13px",color:"#4CAF7D",textAlign:"center",padding:"24px"}},"✓ Todo al día. Sin pendientes."));
 
   items.forEach(i=>{
-    const card=h("div",{className:"card",style:{borderLeft:"3px solid "+(EST_COL[i.estado]||"#8A8070")}});
-    const topRow=h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}});
-    topRow.appendChild(h("div",{style:{display:"flex",gap:"6px",alignItems:"center",cursor:"pointer",flex:"1"},onClick:()=>{S.pid=i.pid;S.vista=i.field==="pedidos"?"pedidos":"faltantes";render()}},
-      h("span",{style:{fontSize:"12px"}},i.tipo),
-      h("div",{style:{fontSize:"11px",color:"#C9A84C",fontWeight:"600"}},i.proj)
+    const card=h("div",{className:"card",style:{borderLeft:"3px solid "+(EST_COL[i.estado]||"#8A8070"),cursor:"pointer"},onClick:()=>{S.pid=i.pid;S.vista=i.field==="pedidos"?"pedidos":"faltantes";render()}});
+    card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}},
+      h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}},
+        h("span",{style:{fontSize:"12px"}},i.tipo),
+        h("div",{style:{fontSize:"11px",color:"#C9A84C",fontWeight:"600"}},i.proj)
+      ),
+      h("div",{className:"badge",style:{background:(EST_COL[i.estado]||"#8A8070")+"22",color:EST_COL[i.estado]||"#8A8070"}},i.estado)
     ));
-    const rightBtns=h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}});
-    rightBtns.appendChild(h("div",{className:"badge",style:{background:(EST_COL[i.estado]||"#8A8070")+"22",color:EST_COL[i.estado]||"#8A8070"}},i.estado));
-    if(D)rightBtns.appendChild(h("button",{style:{background:"none",border:"1px solid rgba(192,82,82,.2)",color:"#C05252",width:"24px",height:"24px",borderRadius:"6px",fontSize:"12px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:"0"},onClick:e=>{e.stopPropagation();S.confirm={t:"Eliminar item",m:"¿Eliminar \""+i.texto.slice(0,50)+"\"?",btn:"Eliminar",fn:()=>{updProj(i.pid,pr=>{const upd={...pr};upd[i.field]=(upd[i.field]||[]).filter(x=>x.id!==i.id);return upd});toast("Eliminado")}};render()}},"✕"));
-    topRow.appendChild(rightBtns);
-    card.appendChild(topRow);
-    card.appendChild(h("div",{style:{fontSize:"13px",lineHeight:"1.4",cursor:"pointer"},onClick:()=>{S.pid=i.pid;S.vista=i.field==="pedidos"?"pedidos":"faltantes";render()}},i.texto));
+    card.appendChild(h("div",{style:{fontSize:"13px",lineHeight:"1.4"}},i.texto));
     if(i.notaGestion)card.appendChild(h("div",{style:{fontSize:"11px",color:"#5B8DB8",marginTop:"4px",fontStyle:"italic"}},"💬 "+i.notaGestion));
     if(i.novedad)card.appendChild(h("div",{style:{fontSize:"11px",color:"#C05252",marginTop:"4px",fontStyle:"italic"}},"⚠️ "+i.novedad));
-    // Show last historial entry
-    if(i.historial.length){const last=i.historial[i.historial.length-1];card.appendChild(h("div",{style:{fontSize:"10px",color:"#5A5347",marginTop:"6px"}},"Último cambio: "+last.quien+" · "+(last.a||"")+" · "+new Date(last.fecha).toLocaleDateString("es-CO",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})))}
     b.appendChild(card);
   });
   app.appendChild(b);
