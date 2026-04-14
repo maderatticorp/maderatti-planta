@@ -1,0 +1,8 @@
+node_modules/
+.cache/
+.local/
+.npm/
+.npm-global/
+.config/
+*.py
+generate_icons.py
