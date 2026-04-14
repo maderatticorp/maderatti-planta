@@ -73,7 +73,7 @@ firebase.initializeApp({apiKey:"AIzaSyDJfqp-0kvdY-wSxde3vyaghdNOi3I0Exc",authDom
 const db=firebase.firestore(),auth=firebase.auth(),storage=firebase.storage();
 const USERS={diego:{pass:"2026",rol:"diego",nombre:"Diego"},wilfer:{pass:"wilfer123",rol:"planta",nombre:"Wilfer"},pablo:{pass:"pablo123",rol:"planta",nombre:"Pablo"}};
 const PROVS=["Fernández","Madecentro","Alsada","Herrajes Iberway","Láminas Iberway","Puertas Vidrio","Espejos/Vidrios","Otro"],MERCS=["Puerto Rico","Aruba","Rep. Dom.","Cap Cana","Colombia","USA","Otro"],EST_PED=["Solicitado","Aprobado","Ordenado","Entregado","Revisado","Con novedad"],EST_COL={Solicitado:"#C05252",Aprobado:"#D4894A",Ordenado:"#5B8DB8",Entregado:"#8D74B8",Revisado:"#4CAF7D","Con novedad":"#C05252"},HERR_EST=["Operativa","Necesita mantenimiento","Fuera de servicio"],HERR_COL={Operativa:"#4CAF7D","Necesita mantenimiento":"#D4894A","Fuera de servicio":"#C05252"};
-const FALT_EST=["Reportado","Visto","En gestión","Revisión planta","Resuelto"],FALT_COL={Reportado:"#C05252",Visto:"#D4894A","En gestión":"#5B8DB8","Revisión planta":"#8D74B8",Resuelto:"#4CAF7D"},STALE_DAYS=2;
+const FALT_COL=EST_COL,STALE_DAYS=2;
 const DEF_PG=[{id:"pg1",nombre:"Perfiles de Luz",estado:"Solicitado",notas:"",fotos:[]},{id:"pg2",nombre:"Zócalos en pino",estado:"Solicitado",notas:"",fotos:[]}];
 const DEF_HERR=[{id:"h1",nombre:"Sierra escuadradora",estado:"Operativa",solicitud:""},{id:"h2",nombre:"Ruteadora CNC",estado:"Operativa",solicitud:""},{id:"h3",nombre:"Compresor 200L",estado:"Operativa",solicitud:""},{id:"h4",nombre:"Taladro de banco",estado:"Operativa",solicitud:""},{id:"h5",nombre:"Lijadora orbital",estado:"Operativa",solicitud:""}];
 const DEF_ASEO=[{id:"a1",item:"Zona de corte limpia",checked:false},{id:"a2",item:"Residuos recogidos y separados",checked:false},{id:"a3",item:"Herramientas guardadas en su puesto",checked:false},{id:"a4",item:"Piso barrido y despejado",checked:false},{id:"a5",item:"Zona de ensamble organizada",checked:false},{id:"a6",item:"Baños limpios",checked:false}];
@@ -168,9 +168,9 @@ function rInicio(D){
   if(D)g.appendChild(h("button",{className:"btn-menu",onClick:()=>{S.vista="mensaje";render()}},h("span",{style:{fontSize:"18px"}},"📢"),h("span",null,"Mi mensaje")));
   b.appendChild(g);
   // Alert banner for stale faltantes
-  const allStale=[];S.projects.forEach(p=>(p.faltantes||[]).forEach(f=>{const est=f.estado||"Reportado";if(est!=="Resuelto"){const ds=Math.floor((Date.now()-new Date(f.fecha+"T00:00:00").getTime())/864e5);if(ds>=STALE_DAYS)allStale.push({proj:p.cliente,texto:f.texto,dias:ds,pid:p.id})}}));
-  // Also check "Revisión planta" items for planta users
-  const pendReview=[];if(!D)S.projects.forEach(p=>(p.faltantes||[]).forEach(f=>{if((f.estado||"Reportado")==="Revisión planta")pendReview.push({proj:p.cliente,texto:f.texto,pid:p.id})}));
+  const allStale=[];S.projects.forEach(p=>(p.faltantes||[]).forEach(f=>{const est=f.estado||"Solicitado";if(est!=="Revisado"){const ds=Math.floor((Date.now()-new Date(f.fecha+"T00:00:00").getTime())/864e5);if(ds>=STALE_DAYS)allStale.push({proj:p.cliente,texto:f.texto,dias:ds,pid:p.id})}}));
+  // Check items pending planta review (Entregado in both pedidos and faltantes)
+  const pendReview=[];if(!D)S.projects.forEach(p=>{(p.faltantes||[]).forEach(f=>{if((f.estado||"Solicitado")==="Entregado")pendReview.push({proj:p.cliente,texto:f.texto,pid:p.id})});(p.pedidos||[]).forEach(f=>{if((f.estado||"Solicitado")==="Entregado")pendReview.push({proj:p.cliente,texto:f.descripcion,pid:p.id})})});
   if(pendReview.length){b.appendChild(h("div",{className:"alert-banner",style:{background:"rgba(141,116,184,.12)",borderColor:"rgba(141,116,184,.3)"},onClick:()=>{S.pid=pendReview[0].pid;S.vista="faltantes";render()}},h("div",{style:{fontSize:"11px",color:"#8D74B8",fontWeight:"600",marginBottom:"4px"}},"🔍 Pendiente de revisión · "+pendReview.length),h("div",{style:{fontSize:"12px",color:"#F5F0E8"}},pendReview.map(r=>r.proj+": "+r.texto.slice(0,40)).join(" | "))))}
   if(allStale.length&&D){b.appendChild(h("div",{className:"alert-banner",onClick:()=>{S.pid=allStale[0].pid;S.vista="faltantes";render()}},h("div",{style:{fontSize:"11px",color:"#C05252",fontWeight:"600",marginBottom:"4px"}},h("span",{className:"alert-dot"}),"Faltantes sin movimiento · "+allStale.length),h("div",{style:{fontSize:"12px",color:"#F5F0E8"}},allStale.map(s=>s.proj+": "+s.texto.slice(0,30)+"("+s.dias+"d)").join(" | "))))}
   const sorted=[...S.projects].sort((a,c)=>a.prioridad-c.prioridad);
@@ -277,28 +277,24 @@ function rFaltantes(D,p){
   if(!p){S.vista="inicio";render();return}app.appendChild(hdr("Faltantes · "+p.cliente,true,"proyecto"));const b=h("div",{className:"app-body"});
   if(!(p.faltantes||[]).length)b.appendChild(h("div",{style:{fontSize:"13px",color:"#8A8070",textAlign:"center",padding:"24px"}},"Sin faltantes reportados"));
   (p.faltantes||[]).forEach(f=>{
-    const estado=f.estado||"Reportado";const resuelto=estado==="Resuelto";
+    const estado=f.estado||"Solicitado";const done=estado==="Revisado";
     const daysSince=Math.floor((Date.now()-new Date(f.fecha+"T00:00:00").getTime())/864e5);
-    const stale=!resuelto&&daysSince>=STALE_DAYS;
-    const card=h("div",{className:"card",style:{opacity:resuelto?"0.5":"1",borderColor:stale?"rgba(192,82,82,.3)":""}});
-    // Header
+    const stale=!done&&daysSince>=STALE_DAYS;
+    const card=h("div",{className:"card",style:{opacity:done?"0.5":"1",borderColor:stale?"rgba(192,82,82,.3)":""}});
     card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}},
       h("div",{style:{fontSize:"11px",color:"#8A8070"}},fmtF(f.fecha)+(f.autor?" · "+f.autor:"")),
-      h("div",{className:"badge",style:{background:FALT_COL[estado]+"22",color:FALT_COL[estado]}},estado)
+      h("div",{className:"badge",style:{background:(EST_COL[estado]||"#8A8070")+"22",color:EST_COL[estado]||"#8A8070"}},estado)
     ));
-    // Text
     card.appendChild(h("div",{style:{fontSize:"13px",lineHeight:"1.4",marginBottom:"4px"}},f.texto));
-    // Nota de gestión
     if(f.notaGestion)card.appendChild(h("div",{style:{fontSize:"12px",color:"#5B8DB8",marginTop:"4px",fontStyle:"italic"}},"💬 "+f.notaGestion));
-    // Stale alert
+    if(f.novedad)card.appendChild(h("div",{style:{fontSize:"12px",color:"#C05252",marginTop:"4px",fontStyle:"italic"}},"⚠️ "+f.novedad));
     if(stale)card.appendChild(h("div",{style:{fontSize:"11px",color:"#C05252",marginTop:"4px"}},h("span",{className:"alert-dot"}),"Sin movimiento hace "+daysSince+" días"));
-    // Photos
     if((f.fotos||[]).length){const gr=h("div",{className:"photo-grid",style:{marginTop:"6px"}});f.fotos.forEach(u=>gr.appendChild(h("img",{className:"photo-thumb",src:u,onClick:()=>{S.imgPrev=u;render()}})));card.appendChild(gr)}
-    // Status chips — Diego controls flow, Planta confirms at review
-    if(D&&!resuelto&&estado!=="Revisión planta"){
-      const chips=h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap",marginTop:"8px"}});
-      ["Visto","En gestión","Revisión planta"].forEach(est=>{
-        chips.appendChild(h("button",{className:"btn-chip",style:{background:estado===est?FALT_COL[est]+"33":"",color:estado===est?FALT_COL[est]:"#8A8070"},
+    if(!done){
+      const ch=h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap",marginTop:"8px"}});
+      // Diego: Visto, En gestión (+nota), Entregado
+      if(D){["Visto","En gestión","Entregado"].forEach(est=>{
+        ch.appendChild(h("button",{className:"btn-chip",style:{background:estado===est?(EST_COL[est]||"")+"33":"",color:estado===est?EST_COL[est]:"#8A8070"},
           onClick:()=>{
             if(est==="En gestión"){
               const nota=prompt("Nota de gestión (ej: Pedido a Fernández, llega jueves):");
@@ -307,34 +303,21 @@ function rFaltantes(D,p){
               updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:est,fechaEstado:new Date().toISOString().slice(0,10)}:x)}));
             }
           }},est));
-      });
-      card.appendChild(chips);
-    }
-    // Planta: at "Revisión planta" they confirm or reject
-    if(!D&&estado==="Revisión planta"){
-      const chips=h("div",{style:{display:"flex",gap:"8px",marginTop:"8px"}});
-      chips.appendChild(h("button",{className:"btn-sm",style:{flex:"1",background:"#4CAF7D",color:"#0D0B07",border:"none"},onClick:()=>{
-        updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Resuelto",resuelto:true,fechaEstado:new Date().toISOString().slice(0,10)}:x)}));
-        toast("Marcado como resuelto");
-      }},"✓ Resuelto"));
-      chips.appendChild(h("button",{className:"btn-sm",style:{flex:"1",background:"rgba(192,82,82,.15)",color:"#C05252",borderColor:"#C0525244"},onClick:()=>{
-        const nota=prompt("¿Qué sigue fallando?");
-        updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"En gestión",notaGestion:(x.notaGestion||"")+" → Persiste: "+(nota||"sin detalle"),fechaEstado:new Date().toISOString().slice(0,10)}:x)}));
-        toast("Devuelto a gestión");
-      }},"✗ Persiste"));
-      card.appendChild(chips);
-    }
-    // Diego can also force-resolve if needed
-    if(D&&estado==="Revisión planta"){
-      card.appendChild(h("div",{style:{fontSize:"10px",color:"#8A8070",marginTop:"6px",fontStyle:"italic"}},"Esperando confirmación de planta"));
+      })}
+      // Planta: at Entregado, choose Revisado or Con novedad
+      if(!D&&estado==="Entregado"){
+        ch.appendChild(h("button",{className:"btn-sm",style:{background:"#4CAF7D",color:"#0D0B07",border:"none",fontSize:"11px",padding:"4px 10px"},onClick:()=>{updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Revisado",resuelto:true,fechaEstado:new Date().toISOString().slice(0,10)}:x)}));toast("Revisado ✓")}},"✓ Revisado"));
+        ch.appendChild(h("button",{className:"btn-sm",style:{background:"rgba(192,82,82,.15)",color:"#C05252",borderColor:"#C0525244",fontSize:"11px",padding:"4px 10px"},onClick:()=>{const nota=prompt("¿Qué problema persiste?");updProj(p.id,pr=>({...pr,faltantes:pr.faltantes.map(x=>x.id===f.id?{...x,estado:"Con novedad",novedad:nota||"Sin detalle",fechaEstado:new Date().toISOString().slice(0,10)}:x)}));toast("Novedad reportada")}},"✗ Con novedad"));
+      }
+      if(D&&estado==="Entregado")ch.appendChild(h("div",{style:{fontSize:"10px",color:"#8A8070",fontStyle:"italic",width:"100%"}},"Esperando confirmación de planta"));
+      card.appendChild(ch);
     }
     b.appendChild(card)});
-  // Report form
   const form=h("div",{className:"card card-highlight",style:{marginTop:"8px"}});form.appendChild(h("div",{style:{fontSize:"11px",color:"#C9A84C",marginBottom:"8px",fontWeight:"600"}},"Reportar faltante"));
   const ta=h("textarea",{className:"inp",placeholder:"Qué falta o qué problema hay...",style:{height:"60px"}});ta.value=S.nFalt;ta.addEventListener("input",e=>S.nFalt=e.target.value);form.appendChild(ta);
   if(S.faltFotos.length){const gr=h("div",{className:"photo-grid",style:{marginTop:"8px"}});S.faltFotos.forEach((u,i)=>{const wrap=h("div",{style:{position:"relative"}});wrap.appendChild(h("img",{className:"photo-thumb",src:u}));wrap.appendChild(h("button",{style:{position:"absolute",top:"-4px",right:"-4px",width:"18px",height:"18px",borderRadius:"9px",background:"#C05252",color:"#fff",border:"none",fontSize:"10px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},onClick:()=>{S.faltFotos.splice(i,1);render()}},"✕"));gr.appendChild(wrap)});form.appendChild(gr)}
   form.appendChild(h("button",{className:"btn-sm",style:{marginTop:"8px",width:"100%"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.capture="environment";i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{S.faltFotos.push(u);render()})})};i.click()}},"📷 Agregar foto"));
-  form.appendChild(h("button",{className:"btn-gold",style:{marginTop:"8px"},onClick:()=>{if(!S.nFalt.trim())return;updProj(p.id,pr=>({...pr,faltantes:[...(pr.faltantes||[]),{id:uid(),texto:S.nFalt.trim(),fecha:new Date().toISOString().slice(0,10),estado:"Reportado",resuelto:false,autor:S.userNombre,fotos:S.faltFotos,notaGestion:"",fechaEstado:new Date().toISOString().slice(0,10)}]}));S.nFalt="";S.faltFotos=[];toast("Faltante reportado")}},"Reportar"));b.appendChild(form);
+  form.appendChild(h("button",{className:"btn-gold",style:{marginTop:"8px"},onClick:()=>{if(!S.nFalt.trim())return;updProj(p.id,pr=>({...pr,faltantes:[...(pr.faltantes||[]),{id:uid(),texto:S.nFalt.trim(),fecha:new Date().toISOString().slice(0,10),estado:"Solicitado",resuelto:false,autor:S.userNombre,fotos:S.faltFotos,notaGestion:"",novedad:"",fechaEstado:new Date().toISOString().slice(0,10)}]}));S.nFalt="";S.faltFotos=[];toast("Faltante reportado")}},"Reportar"));b.appendChild(form);
   b.appendChild(h("button",{className:"btn-back",style:{marginTop:"16px"},onClick:()=>{S.vista="proyecto";render()}},"← Volver al proyecto"));app.appendChild(b)
 }
 
