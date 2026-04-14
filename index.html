@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0B07">
-<title>Maderatti Planta v21</title>
+<title>Maderatti Planta v22</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
@@ -121,6 +121,7 @@ async function addRep(t,a,fotos){const r={id:uid(),fecha:new Date().toISOString(
 async function saveMsg(t){await db.collection(COL.set).doc("mensaje").set({texto:t});S.msg=t}
 function updProj(id,fn){S.projects=S.projects.map(p=>{if(p.id!==id)return p;const u=typeof fn==="function"?fn(p):{...p,...fn};saveProj(u);return u});render()}
 function compressUpload(file,cb){const r=new FileReader();r.onload=e=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");const M=800;let w=img.width,ht=img.height;if(w>M||ht>M){if(w>ht){ht=ht*(M/w);w=M}else{w=w*(M/ht);ht=M}}c.width=w;c.height=ht;c.getContext("2d").drawImage(img,0,0,w,ht);c.toBlob(async b=>{try{const ref=storage.ref("planta/"+uid()+"_"+file.name);await ref.put(b);const url=await ref.getDownloadURL();cb(url)}catch(e){console.error(e);toast("Error subiendo foto")}},"image/jpeg",.7)};img.src=e.target.result};r.readAsDataURL(file)}
+function mkPaste(onImg){const pz=document.createElement("div");pz.contentEditable="true";Object.assign(pz.style,{fontSize:"11px",color:"#5A5347",padding:"6px 10px",marginTop:"6px",border:"1px dashed rgba(201,168,76,.15)",borderRadius:"6px",outline:"none",cursor:"text"});pz.textContent="📋 Ctrl+V para pegar foto";pz.addEventListener("focus",()=>{pz.style.borderColor="rgba(201,168,76,.4)";pz.textContent=""});pz.addEventListener("blur",()=>{pz.style.borderColor="rgba(201,168,76,.15)";pz.textContent="📋 Ctrl+V para pegar foto"});pz.addEventListener("paste",e=>{e.preventDefault();const items=(e.clipboardData||e.originalEvent.clipboardData).items;let found=false;for(const item of items){if(item.type.startsWith("image/")){found=true;const file=item.getAsFile();pz.textContent="Subiendo...";compressUpload(file,url=>{onImg(url);toast("Foto pegada ✓")});break}}if(!found){pz.textContent="Solo imágenes";setTimeout(()=>{pz.textContent="📋 Ctrl+V para pegar foto"},1500)}});pz.addEventListener("input",e=>{if(!e.inputType||e.inputType==="insertText"){pz.textContent="📋 Ctrl+V para pegar foto"}});return pz}
 
 const app=document.getElementById("app");
 function h(tag,a,...ch){const el=document.createElement(tag);if(a)for(const[k,v]of Object.entries(a)){if(v==null||v===false)continue;if(k==="style"&&typeof v==="object")Object.assign(el.style,v);else if(k.startsWith("on"))el.addEventListener(k.slice(2).toLowerCase(),v);else if(k==="className")el.className=v;else el.setAttribute(k,v)}for(const c of ch.flat()){if(c==null||c===false)continue;el.appendChild(typeof c==="string"||typeof c==="number"?document.createTextNode(c):c)}return el}
@@ -146,7 +147,7 @@ function hdr(title,back=true,bv="inicio"){
 }
 
 function rLogin(){
-  const w=h("div",{className:"login-wrap"},h("div",{style:{fontSize:"11px",letterSpacing:".25em",color:"#C9A84C",textTransform:"uppercase",marginBottom:"8px"}},"Maderatti"),h("div",{style:{fontSize:"22px",fontWeight:"600",marginBottom:"4px"}},"Planta"),h("div",{style:{fontSize:"13px",color:"#8A8070",marginBottom:"32px",textAlign:"center"}},"Control de producción · v21"));
+  const w=h("div",{className:"login-wrap"},h("div",{style:{fontSize:"11px",letterSpacing:".25em",color:"#C9A84C",textTransform:"uppercase",marginBottom:"8px"}},"Maderatti"),h("div",{style:{fontSize:"22px",fontWeight:"600",marginBottom:"4px"}},"Planta"),h("div",{style:{fontSize:"13px",color:"#8A8070",marginBottom:"32px",textAlign:"center"}},"Control de producción · v22"));
   const form=h("div",{style:{width:"100%",maxWidth:"260px",display:"flex",flexDirection:"column",gap:"10px"}});
   const uInp=h("input",{className:"inp",placeholder:"Usuario",value:S.loginUser,autocomplete:"username",style:{textAlign:"center"}});
   uInp.addEventListener("input",e=>{S.loginUser=e.target.value.toLowerCase().trim();S.loginErr=""});
@@ -200,6 +201,7 @@ function rPG(D){
       ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C9A84C"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{S.pg=S.pg.map(x=>x.id===pg.id?{...x,fotos:[...(x.fotos||[]),u]}:x);savePG();render()})})};i.click()}},"🖼"));
       if(D)ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C05252",borderColor:"#C0525233"},onClick:()=>{S.pg=S.pg.filter(x=>x.id!==pg.id);savePG();toast("Eliminado")}},"✕"));
       card.appendChild(ch);
+    card.appendChild(mkPaste(url=>{S.pg=S.pg.map(x=>x.id===pg.id?{...x,fotos:[...(x.fotos||[]),url]}:x);savePG();render()}));
     b.appendChild(card)});
   const ar=h("div",{style:{display:"flex",gap:"8px",marginTop:"8px"}});const inp=h("input",{className:"inp",placeholder:"Nuevo item..."});
     ar.append(inp,h("button",{className:"btn-sm",style:{background:"#C9A84C",color:"#0D0B07",flexShrink:"0"},onClick:()=>{if(!inp.value.trim())return;S.pg.push({id:uid(),nombre:inp.value.trim(),estado:"Solicitado",notas:"",fotos:[]});inp.value="";savePG();render()}},"+"));b.appendChild(ar);
@@ -268,6 +270,7 @@ function rPedidos(D,p){
       ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C9A84C"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,fotos:[...(x.fotos||[]),u]}:x)}))})})};i.click()}},"🖼"));
       card.appendChild(ch);
     }
+    card.appendChild(mkPaste(url=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,fotos:[...(x.fotos||[]),url]}:x)}));render()}));
     b.appendChild(card)});
   if(!S.showNP)b.appendChild(h("button",{className:"btn-add",style:{marginTop:"8px"},onClick:()=>{S.showNP=true;render()}},"+ Agregar pedido"));
     else{const form=h("div",{className:"card card-highlight"});form.appendChild(h("div",{style:{fontSize:"11px",color:"#C9A84C",marginBottom:"8px",fontWeight:"600"}},"Nuevo pedido"));
