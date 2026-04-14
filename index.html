@@ -128,7 +128,7 @@ function render(){
   if(S.loading){app.appendChild(h("div",{className:"loading"},h("div",{className:"spinner"}),h("div",{style:{fontSize:"11px",letterSpacing:".2em",color:"#C9A84C",textTransform:"uppercase"}},"Maderatti Planta"),h("div",{style:{fontSize:"12px",color:"#8A8070"}},"Cargando...")));return}
   if(!S.rol){rLogin();return}
   const D=S.rol==="diego",P=S.projects.find(p=>p.id===S.pid);
-  const views={inicio:()=>rInicio(D),proyecto:()=>rProyecto(D,P),editProject:()=>rProjForm(P),pedidos:()=>rPedidos(D,P),faltantes:()=>rFaltantes(D,P),despacho:()=>rDespacho(D,P),reporte:()=>rReporte(D),mensaje:rMensaje,herramientas:()=>rHerr(D),aseo:rAseo,addProject:()=>rProjForm(null),pedidosGlobal:()=>rPG(D)};
+  const views={inicio:()=>rInicio(D),proyecto:()=>rProyecto(D,P),editProject:()=>rProjForm(P),pedidos:()=>rPedidos(D,P),faltantes:()=>rFaltantes(D,P),despacho:()=>rDespacho(D,P),reporte:()=>rReporte(D),mensaje:rMensaje,herramientas:()=>rHerr(D),aseo:rAseo,addProject:()=>rProjForm(null),pedidosGlobal:()=>rPG(D),pendientes:rPendientes};
   (views[S.vista]||views.inicio)();
   if(S.toast)app.appendChild(h("div",{className:"toast"},S.toast));
   if(S.confirm){const ov=h("div",{className:"confirm-overlay",onClick:()=>{S.confirm=null;render()}});ov.appendChild(h("div",{className:"confirm-box",onClick:e=>e.stopPropagation()},h("div",{style:{fontSize:"14px",fontWeight:"600",marginBottom:"12px"}},S.confirm.t),h("div",{style:{fontSize:"13px",color:"#8A8070",marginBottom:"20px"}},S.confirm.m),h("div",{style:{display:"flex",gap:"8px"}},h("button",{className:"btn-danger",style:{flex:"1"},onClick:()=>{S.confirm.fn();S.confirm=null;render()}},S.confirm.btn||"Eliminar"),h("button",{className:"btn-sm",style:{flex:"1"},onClick:()=>{S.confirm=null;render()}},"Cancelar"))));app.appendChild(ov)}
@@ -165,6 +165,7 @@ function rInicio(D){
   g.appendChild(h("button",{className:"btn-menu",onClick:()=>{S.vista="reporte";render()}},h("span",{style:{fontSize:"18px"}},"📋"),h("span",null,"Reporte diario")));
   g.appendChild(h("button",{className:"btn-menu",onClick:()=>{S.vista="herramientas";render()}},h("span",{style:{fontSize:"18px"}},"🔧"),h("span",null,"Herramientas")));
   g.appendChild(h("button",{className:"btn-menu",onClick:()=>{S.vista="aseo";render()}},h("span",{style:{fontSize:"18px"}},"🧹"),h("span",null,"Orden y aseo")));
+  if(D)g.appendChild(h("button",{className:"btn-menu",onClick:()=>{S.vista="pendientes";render()}},h("span",{style:{fontSize:"18px"}},"🔔"),h("span",null,"Pendientes")));
   if(D)g.appendChild(h("button",{className:"btn-menu",onClick:()=>{S.vista="mensaje";render()}},h("span",{style:{fontSize:"18px"}},"📢"),h("span",null,"Mi mensaje")));
   b.appendChild(g);
   // Alert banner for stale faltantes
@@ -380,6 +381,43 @@ function rAseo(){
   b.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}},h("div",{style:{fontSize:"13px",color:"#8A8070"}},done+"/"+S.aseo.length+" completado"),done===S.aseo.length&&S.aseo.length?h("div",{style:{fontSize:"13px",color:"#4CAF7D",fontWeight:"600"}},"Todo listo ✓"):null,h("button",{className:"btn-chip",style:{color:"#D4894A",borderColor:"#D4894A44"},onClick:()=>{S.aseo=S.aseo.map(a=>({...a,checked:false}));saveAseo();render()}},"Reiniciar")));
   S.aseo.forEach(item=>b.appendChild(h("div",{className:"card",style:{display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px"}},h("button",{className:"check-box"+(item.checked?" checked":""),onClick:()=>{S.aseo=S.aseo.map(a=>a.id===item.id?{...a,checked:!a.checked}:a);saveAseo();render()}},item.checked?"✓":""),h("div",{style:{flex:"1",fontSize:"13px",color:item.checked?"#8A8070":"#F5F0E8"}},item.item))));
   app.appendChild(b)
+}
+
+function rPendientes(){
+  app.appendChild(hdr("Pendientes"));const b=h("div",{className:"app-body"});
+  // Collect all pending items across projects
+  const items=[];
+  S.projects.forEach(p=>{
+    (p.pedidos||[]).forEach(ped=>{if(ped.estado!=="Revisado")items.push({tipo:"📦",proj:p.cliente,pid:p.id,texto:ped.descripcion||ped.proveedor,estado:ped.estado||"Solicitado",novedad:ped.novedad,id:ped.id,field:"pedidos"})});
+    (p.faltantes||[]).forEach(f=>{if((f.estado||"Solicitado")!=="Revisado")items.push({tipo:"⚠️",proj:f.autor||p.cliente,pid:p.id,texto:f.texto,estado:f.estado||"Solicitado",novedad:f.novedad,notaGestion:f.notaGestion,id:f.id,field:"faltantes"})});
+  });
+  // Sort: Con novedad first, then Solicitado, then rest
+  const order={"Con novedad":0,Solicitado:1,Visto:2,"En gestión":3,Entregado:4};
+  items.sort((a,c)=>(order[a.estado]??5)-(order[c.estado]??5));
+
+  // Count by status
+  const counts={};items.forEach(i=>{counts[i.estado]=(counts[i.estado]||0)+1});
+  const summary=h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"12px"}});
+  Object.entries(counts).forEach(([est,n])=>{summary.appendChild(h("div",{className:"badge",style:{background:(EST_COL[est]||"#8A8070")+"22",color:EST_COL[est]||"#8A8070",padding:"4px 10px",fontSize:"12px"}},est+" · "+n))});
+  b.appendChild(summary);
+
+  if(!items.length)b.appendChild(h("div",{style:{fontSize:"13px",color:"#4CAF7D",textAlign:"center",padding:"24px"}},"✓ Todo al día. Sin pendientes."));
+
+  items.forEach(i=>{
+    const card=h("div",{className:"card",style:{borderLeft:"3px solid "+(EST_COL[i.estado]||"#8A8070"),cursor:"pointer"},onClick:()=>{S.pid=i.pid;S.vista=i.field==="pedidos"?"pedidos":"faltantes";render()}});
+    card.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}},
+      h("div",{style:{display:"flex",gap:"6px",alignItems:"center"}},
+        h("span",{style:{fontSize:"12px"}},i.tipo),
+        h("div",{style:{fontSize:"11px",color:"#C9A84C",fontWeight:"600"}},i.proj)
+      ),
+      h("div",{className:"badge",style:{background:(EST_COL[i.estado]||"#8A8070")+"22",color:EST_COL[i.estado]||"#8A8070"}},i.estado)
+    ));
+    card.appendChild(h("div",{style:{fontSize:"13px",lineHeight:"1.4"}},i.texto));
+    if(i.notaGestion)card.appendChild(h("div",{style:{fontSize:"11px",color:"#5B8DB8",marginTop:"4px",fontStyle:"italic"}},"💬 "+i.notaGestion));
+    if(i.novedad)card.appendChild(h("div",{style:{fontSize:"11px",color:"#C05252",marginTop:"4px",fontStyle:"italic"}},"⚠️ "+i.novedad));
+    b.appendChild(card);
+  });
+  app.appendChild(b);
 }
 
 init();
