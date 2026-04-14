@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0B07">
-<title>Maderatti Planta v22</title>
+<title>Maderatti Planta v23</title>
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
@@ -147,7 +147,7 @@ function hdr(title,back=true,bv="inicio"){
 }
 
 function rLogin(){
-  const w=h("div",{className:"login-wrap"},h("div",{style:{fontSize:"11px",letterSpacing:".25em",color:"#C9A84C",textTransform:"uppercase",marginBottom:"8px"}},"Maderatti"),h("div",{style:{fontSize:"22px",fontWeight:"600",marginBottom:"4px"}},"Planta"),h("div",{style:{fontSize:"13px",color:"#8A8070",marginBottom:"32px",textAlign:"center"}},"Control de producción · v22"));
+  const w=h("div",{className:"login-wrap"},h("div",{style:{fontSize:"11px",letterSpacing:".25em",color:"#C9A84C",textTransform:"uppercase",marginBottom:"8px"}},"Maderatti"),h("div",{style:{fontSize:"22px",fontWeight:"600",marginBottom:"4px"}},"Planta"),h("div",{style:{fontSize:"13px",color:"#8A8070",marginBottom:"32px",textAlign:"center"}},"Control de producción · v23"));
   const form=h("div",{style:{width:"100%",maxWidth:"260px",display:"flex",flexDirection:"column",gap:"10px"}});
   const uInp=h("input",{className:"inp",placeholder:"Usuario",value:S.loginUser,autocomplete:"username",style:{textAlign:"center"}});
   uInp.addEventListener("input",e=>{S.loginUser=e.target.value.toLowerCase().trim();S.loginErr=""});
@@ -201,7 +201,7 @@ function rPG(D){
       ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C9A84C"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{S.pg=S.pg.map(x=>x.id===pg.id?{...x,fotos:[...(x.fotos||[]),u]}:x);savePG();render()})})};i.click()}},"🖼"));
       if(D)ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C05252",borderColor:"#C0525233"},onClick:()=>{S.pg=S.pg.filter(x=>x.id!==pg.id);savePG();toast("Eliminado")}},"✕"));
       card.appendChild(ch);
-    card.appendChild(mkPaste(url=>{S.pg=S.pg.map(x=>x.id===pg.id?{...x,fotos:[...(x.fotos||[]),url]}:x);savePG();render()}));
+    if(D)card.appendChild(mkPaste(url=>{S.pg=S.pg.map(x=>x.id===pg.id?{...x,fotos:[...(x.fotos||[]),url]}:x);savePG();render()}));
     b.appendChild(card)});
   const ar=h("div",{style:{display:"flex",gap:"8px",marginTop:"8px"}});const inp=h("input",{className:"inp",placeholder:"Nuevo item..."});
     ar.append(inp,h("button",{className:"btn-sm",style:{background:"#C9A84C",color:"#0D0B07",flexShrink:"0"},onClick:()=>{if(!inp.value.trim())return;S.pg.push({id:uid(),nombre:inp.value.trim(),estado:"Solicitado",notas:"",fotos:[]});inp.value="";savePG();render()}},"+"));b.appendChild(ar);
@@ -270,7 +270,7 @@ function rPedidos(D,p){
       ch.appendChild(h("button",{className:"btn-chip",style:{color:"#C9A84C"},onClick:()=>{const i=document.createElement("input");i.type="file";i.accept="image/*";i.multiple=true;i.onchange=()=>{Array.from(i.files).forEach(f=>{compressUpload(f,u=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,fotos:[...(x.fotos||[]),u]}:x)}))})})};i.click()}},"🖼"));
       card.appendChild(ch);
     }
-    card.appendChild(mkPaste(url=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,fotos:[...(x.fotos||[]),url]}:x)}));render()}));
+    if(D)card.appendChild(mkPaste(url=>{updProj(p.id,pr=>({...pr,pedidos:pr.pedidos.map(x=>x.id===ped.id?{...x,fotos:[...(x.fotos||[]),url]}:x)}));render()}));
     b.appendChild(card)});
   if(!S.showNP)b.appendChild(h("button",{className:"btn-add",style:{marginTop:"8px"},onClick:()=>{S.showNP=true;render()}},"+ Agregar pedido"));
     else{const form=h("div",{className:"card card-highlight"});form.appendChild(h("div",{style:{fontSize:"11px",color:"#C9A84C",marginBottom:"8px",fontWeight:"600"}},"Nuevo pedido"));
