@@ -107,7 +107,8 @@ async function refresh(){
     render();toast("Actualizado");
   }catch(e){console.error(e);toast("Error al refrescar")}
 }
-// Refresh only via manual button ↻
+// Auto-refresh every hour + manual via ↻
+setInterval(()=>{if(S.rol)refresh().then(()=>{S.toast=null})},3600000);
 
 async function saveProj(p){const d={...p};delete d._did;if(p._did)await db.collection(COL.projects).doc(p._did).set(d);else{const r=await db.collection(COL.projects).add(d);p._did=r.id}}
 async function delProj(did){await db.collection(COL.projects).doc(did).delete()}
