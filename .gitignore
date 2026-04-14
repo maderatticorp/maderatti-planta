@@ -6,3 +6,10 @@ node_modules/
 .config/
 *.py
 generate_icons.py
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
