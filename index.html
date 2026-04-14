@@ -96,6 +96,20 @@ async function init(){
     S.loading=false;render();
   }catch(e){console.error(e);S.loading=false;render()}
 }
+async function refresh(){
+  try{
+    const ps=await db.collection(COL.projects).orderBy("prioridad").get();S.projects=ps.docs.map(d=>({...d.data(),_did:d.id}));
+    let snap=await db.collection(COL.herr).doc("lista").get();if(snap.exists)S.herr=snap.data().items||[];
+    snap=await db.collection(COL.aseo).doc("checklist").get();if(snap.exists)S.aseo=snap.data().items||[];
+    snap=await db.collection(COL.rep).orderBy("timestamp","desc").limit(30).get();S.reps=snap.docs.map(d=>({...d.data(),_did:d.id}));
+    snap=await db.collection(COL.set).doc("mensaje").get();if(snap.exists){S.msg=snap.data().texto||"";S.msgD=S.msg}
+    snap=await db.collection(COL.pg).doc("lista").get();if(snap.exists)S.pg=snap.data().items||[];
+    render();toast("Actualizado");
+  }catch(e){console.error(e);toast("Error al refrescar")}
+}
+// Auto-refresh every 30 seconds
+setInterval(()=>{if(S.rol)refresh().then(()=>{S.toast=null})},30000);
+
 async function saveProj(p){const d={...p};delete d._did;if(p._did)await db.collection(COL.projects).doc(p._did).set(d);else{const r=await db.collection(COL.projects).add(d);p._did=r.id}}
 async function delProj(did){await db.collection(COL.projects).doc(did).delete()}
 async function saveHerr(){await db.collection(COL.herr).doc("lista").set({items:S.herr})}
@@ -125,6 +139,7 @@ function hdr(title,back=true,bv="inicio"){
   return h("div",{className:"hdr"},
     ...(back?[h("button",{className:"back-btn",onClick:()=>{S.vista=bv;if(bv==="inicio"){S.pid=null;S.showNP=false}render()}},"←")]:[]),
     h("div",{style:{flex:"1"}},h("div",{className:"hdr-brand"},"Maderatti Planta"),h("div",{className:"hdr-title"},title)),
+    h("button",{className:"back-btn",style:{fontSize:"14px",border:"1px solid rgba(201,168,76,.1)"},onClick:()=>refresh()},"↻"),
     h("div",{className:"hdr-role",onClick:()=>{S.rol=null;S.vista="inicio";S.pid=null;S.loginUser="";S.loginPass="";render()}},S.userNombre+" · Salir"))
 }
 
