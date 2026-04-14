@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0D0B07">
+<title>Maderatti Planta</title>
+<link rel="manifest" href="/manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{background:#0D0B07;color:#F5F0E8;font-family:'DM Sans',system-ui,sans-serif}
+#app{max-width:420px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+/* Scrollable body */
+.app-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 16px 90px}
+
+/* Header */
+.hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid rgba(201,168,76,.1);background:#0D0B07;flex-shrink:0;z-index:10}
+.hdr-brand{font-size:10px;letter-spacing:.2em;color:#C9A84C;text-transform:uppercase}
+.hdr-title{font-size:16px;font-weight:600;margin-top:2px}
+.hdr-role{font-size:10px;color:#5A5347}
+.back-btn{background:none;border:1px solid rgba(201,168,76,.15);color:#C9A84C;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* Cards */
+.card{background:#16140F;border:1px solid rgba(201,168,76,.08);border-radius:10px;padding:14px 16px;margin-bottom:8px}
+.card-highlight{border-color:rgba(201,168,76,.25)}
+.msg-card{background:linear-gradient(135deg,rgba(201,168,76,.08),rgba(201,168,76,.03));border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:14px 16px;margin-bottom:16px;cursor:pointer}
+
+/* Buttons */
+.btn-gold{background:#C9A84C;color:#0D0B07;border:none;border-radius:10px;padding:14px 32px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;width:100%}
+.btn-sm{background:rgba(201,168,76,.1);color:#C9A84C;border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-chip{background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.1);border-radius:14px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;color:#8A8070}
+.btn-add{background:none;border:1px dashed rgba(201,168,76,.2);border-radius:10px;padding:12px;font-size:13px;color:#C9A84C;cursor:pointer;font-family:inherit;width:100%;text-align:center}
+.btn-back{background:none;border:none;font-size:12px;color:#8A8070;cursor:pointer;font-family:inherit;padding:0}
+.btn-menu{background:#16140F;border:1px solid rgba(201,168,76,.08);border-radius:10px;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:#F5F0E8;font-family:inherit}
+.btn-section{background:#16140F;border:1px solid rgba(201,168,76,.08);border-radius:10px;padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#F5F0E8;font-family:inherit;width:100%}
+
+/* Inputs */
+.inp{background:#1A1710;border:1px solid rgba(201,168,76,.15);border-radius:8px;padding:10px 12px;font-size:13px;color:#F5F0E8;width:100%;font-family:inherit;outline:none}
+.inp:focus{border-color:rgba(201,168,76,.4)}
+.inp-pin{width:100px;text-align:center;letter-spacing:.3em}
+select.inp{appearance:auto}
+textarea.inp{resize:none}
+
+/* Utilities */
+.sec-title{font-size:11px;letter-spacing:.15em;color:#8A8070;text-transform:uppercase;margin-bottom:10px;margin-top:8px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.flex-row{display:flex;gap:8px;align-items:center}
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;display:inline-block}
+.check-box{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;flex-shrink:0;border:2px solid rgba(201,168,76,.2);background:transparent;color:#4CAF7D}
+.check-box.checked{border-color:#4CAF7D;background:rgba(76,175,125,.13)}
+.prio-circle{width:24px;height:24px;border-radius:12px;background:rgba(201,168,76,.12);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#C9A84C}
+.progress-bar{background:rgba(201,168,76,.08);border-radius:3px;height:6px}
+.progress-fill{height:6px;border-radius:3px;background:#C9A84C;transition:width .3s}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#C9A84C;color:#0D0B07;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:100;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Login center */
+.login-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;gap:16px}
+
+/* Range slider */
+input[type=range]{width:100%;accent-color:#C9A84C}
+
+/* Loading */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:12px}
+.spinner{width:28px;height:28px;border:3px solid rgba(201,168,76,.15);border-top-color:#C9A84C;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   MADERATTI PLANTA v5 — Firebase Edition
+   ═══════════════════════════════════════════════════ */
+
+// Firebase config — same project maderatti-ops
+const firebaseConfig = {
+  apiKey: "AIzaSyDJfqp-0kvdY-wSxde3vyaghdNOi3I0Exc",
+  authDomain: "maderatti-ops.firebaseapp.com",
+  projectId: "maderatti-ops",
+  storageBucket: "maderatti-ops.appspot.com",
+  messagingSenderId: "1098210169153",
+  appId: "1:1098210169153:web:planta"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+/* ─── STATE ─── */
+const PIN_DIEGO = "2026";
+const PROVEEDORES = ["Fernández","Madecentro","Alsada","Herrajes Iberway","Láminas Iberway","Puertas Vidrio","Espejos/Vidrios","Otro"];
+const ESTADO_PEDIDO = ["Pendiente","Pedido","Entregado"];
+const ESTADO_PEDIDO_COLOR = {Pendiente:"#C05252",Pedido:"#D4894A",Entregado:"#4CAF7D"};
+const HERRAMIENTA_ESTADO = ["Operativa","Necesita mantenimiento","Fuera de servicio"];
+const HERRAMIENTA_COLOR = {Operativa:"#4CAF7D","Necesita mantenimiento":"#D4894A","Fuera de servicio":"#C05252"};
+
+let state = {
+  loading: true,
+  rol: null,
+  pinInput: "",
+  pinError: false,
+  vista: "inicio",
+  proyectoId: null,
+  projects: [],
+  herramientas: [],
+  aseo: [],
+  reportes: [],
+  mensaje: "",
+  toast: null,
+  nuevoReporte: "",
+  nuevoFaltante: "",
+  msgDraft: "",
+  showNewPedido: false,
+  newPedProv: PROVEEDORES[0],
+  newPedDesc: "",
+};
+
+const uid = () => Math.random().toString(36).slice(2,8);
+const diasRestantes = (f) => { const h=new Date();h.setHours(0,0,0,0); return Math.ceil((new Date(f+"T00:00:00")-h)/864e5); };
+const fmtFecha = (f) => new Date(f+"T00:00:00").toLocaleDateString("es-CO",{day:"numeric",month:"short"});
+
+function showToast(msg) { state.toast = msg; render(); setTimeout(() => { state.toast = null; render(); }, 2000); }
+
+/* ─── FIREBASE OPERATIONS ─── */
+const COLLECTIONS = {
+  projects: "planta_projects",
+  herramientas: "planta_herramientas",
+  aseo: "planta_aseo",
+  reportes: "planta_reportes",
+  settings: "planta_settings",
+};
+
+// Default data for first-time setup
+const DEFAULT_HERRAMIENTAS = [
+  {id:"h1",nombre:"Sierra escuadradora",estado:"Operativa",solicitud:""},
+  {id:"h2",nombre:"Ruteadora CNC",estado:"Operativa",solicitud:""},
+  {id:"h3",nombre:"Compresor 200L",estado:"Operativa",solicitud:""},
+  {id:"h4",nombre:"Taladro de banco",estado:"Operativa",solicitud:""},
+  {id:"h5",nombre:"Lijadora orbital",estado:"Operativa",solicitud:""},
+];
+const DEFAULT_ASEO = [
+  {id:"a1",item:"Zona de corte limpia",checked:false},
+  {id:"a2",item:"Residuos recogidos y separados",checked:false},
+  {id:"a3",item:"Herramientas guardadas en su puesto",checked:false},
+  {id:"a4",item:"Piso barrido y despejado",checked:false},
+  {id:"a5",item:"Zona de ensamble organizada",checked:false},
+  {id:"a6",item:"Baños limpios",checked:false},
+];
+
+async function initFirebase() {
+  try {
+    // Anonymous auth
+    await auth.signInAnonymously();
+
+    // Load projects
+    const projSnap = await db.collection(COLLECTIONS.projects).orderBy("prioridad").get();
+    state.projects = projSnap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+
+    // Load herramientas
+    const herrSnap = await db.collection(COLLECTIONS.herramientas).doc("lista").get();
+    if (herrSnap.exists) {
+      state.herramientas = herrSnap.data().items || [];
+    } else {
+      state.herramientas = DEFAULT_HERRAMIENTAS;
+      await db.collection(COLLECTIONS.herramientas).doc("lista").set({ items: DEFAULT_HERRAMIENTAS });
+    }
+
+    // Load aseo
+    const aseoSnap = await db.collection(COLLECTIONS.aseo).doc("checklist").get();
+    if (aseoSnap.exists) {
+      state.aseo = aseoSnap.data().items || [];
+    } else {
+      state.aseo = DEFAULT_ASEO;
+      await db.collection(COLLECTIONS.aseo).doc("checklist").set({ items: DEFAULT_ASEO });
+    }
+
+    // Load reportes
+    const repSnap = await db.collection(COLLECTIONS.reportes).orderBy("fecha","desc").limit(30).get();
+    state.reportes = repSnap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+
+    // Load mensaje
+    const msgSnap = await db.collection(COLLECTIONS.settings).doc("mensaje").get();
+    if (msgSnap.exists) {
+      state.mensaje = msgSnap.data().texto || "";
+      state.msgDraft = state.mensaje;
+    }
+
+    state.loading = false;
+    render();
+  } catch (err) {
+    console.error("Firebase init error:", err);
+    state.loading = false;
+    render();
+  }
+}
+
+async function saveProject(project) {
+  const docId = project._docId;
+  const data = { ...project };
+  delete data._docId;
+  if (docId) {
+    await db.collection(COLLECTIONS.projects).doc(docId).set(data);
+  } else {
+    const ref = await db.collection(COLLECTIONS.projects).add(data);
+    project._docId = ref.id;
+  }
+}
+
+async function saveHerramientas() {
+  await db.collection(COLLECTIONS.herramientas).doc("lista").set({ items: state.herramientas });
+}
+
+async function saveAseo() {
+  await db.collection(COLLECTIONS.aseo).doc("checklist").set({ items: state.aseo });
+}
+
+async function addReporte(texto, autor) {
+  const rep = { id: uid(), fecha: new Date().toISOString().slice(0,10), autor, texto, foto: null, timestamp: Date.now() };
+  const ref = await db.collection(COLLECTIONS.reportes).add(rep);
+  rep._docId = ref.id;
+  state.reportes.unshift(rep);
+}
+
+async function saveMensaje(texto) {
+  await db.collection(COLLECTIONS.settings).doc("mensaje").set({ texto });
+  state.mensaje = texto;
+}
+
+function updateProject(id, updater) {
+  state.projects = state.projects.map(p => {
+    if (p.id !== id) return p;
+    const updated = typeof updater === "function" ? updater(p) : { ...p, ...updater };
+    saveProject(updated);
+    return updated;
+  });
+  render();
+}
+
+/* ─── RENDER ENGINE ─── */
+const $ = document.getElementById.bind(document);
+const app = $("app");
+
+function h(tag, attrs, ...children) {
+  const el = document.createElement(tag);
+  if (attrs) {
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "style" && typeof v === "object") { Object.assign(el.style, v); }
+      else if (k.startsWith("on")) { el.addEventListener(k.slice(2).toLowerCase(), v); }
+      else if (k === "className") { el.className = v; }
+      else if (k === "innerHTML") { el.innerHTML = v; }
+      else { el.setAttribute(k, v); }
+    }
+  }
+  for (const c of children.flat()) {
+    if (c == null || c === false) continue;
+    el.appendChild(typeof c === "string" || typeof c === "number" ? document.createTextNode(c) : c);
+  }
+  return el;
+}
+
+function render() {
+  app.innerHTML = "";
+
+  // Loading
+  if (state.loading) {
+    app.appendChild(h("div", {className:"loading"},
+      h("div",{className:"spinner"}),
+      h("div",{style:{fontSize:"11px",letterSpacing:".2em",color:"#C9A84C",textTransform:"uppercase"}},"Maderatti Planta"),
+      h("div",{style:{fontSize:"12px",color:"#8A8070"}},"Cargando...")
+    ));
+    return;
+  }
+
+  // Login
+  if (!state.rol) { renderLogin(); return; }
+
+  const isDiego = state.rol === "diego";
+  const proyecto = state.projects.find(p => p.id === state.proyectoId);
+
+  switch (state.vista) {
+    case "inicio": renderInicio(isDiego); break;
+    case "proyecto": renderProyecto(isDiego, proyecto); break;
+    case "pedidos": renderPedidos(isDiego, proyecto); break;
+    case "faltantes": renderFaltantes(isDiego, proyecto); break;
+    case "despacho": renderDespacho(isDiego, proyecto); break;
+    case "reporte": renderReporte(isDiego); break;
+    case "mensaje": renderMensaje(); break;
+    case "herramientas": renderHerramientas(isDiego); break;
+    case "aseo": renderAseo(); break;
+    case "addProject": renderAddProject(); break;
+  }
+
+  if (state.toast) {
+    app.appendChild(h("div",{className:"toast"}, state.toast));
+  }
+}
+
+function makeHeader(title, showBack=true) {
+  const hdr = h("div",{className:"hdr"},
+    ...(showBack ? [h("button",{className:"back-btn",onClick:()=>{state.vista="inicio";state.proyectoId=null;state.showNewPedido=false;render()}},"←")] : []),
+    h("div",{style:{flex:"1"}},
+      h("div",{className:"hdr-brand"},"Maderatti Planta"),
+      h("div",{className:"hdr-title"},title)
+    ),
+    h("div",{className:"hdr-role"}, state.rol==="diego"?"Diego":"Planta")
+  );
+  return hdr;
+}
+
+/* ═══ LOGIN ═══ */
+function renderLogin() {
+  const wrap = h("div",{className:"login-wrap"},
+    h("div",{style:{fontSize:"11px",letterSpacing:".25em",color:"#C9A84C",textTransform:"uppercase",marginBottom:"8px"}},"Maderatti"),
+    h("div",{style:{fontSize:"22px",fontWeight:"600",marginBottom:"4px"}},"Planta"),
+    h("div",{style:{fontSize:"13px",color:"#8A8070",marginBottom:"32px",textAlign:"center"}},"Control de producción"),
+    h("button",{className:"btn-gold",style:{maxWidth:"260px"},onClick:()=>{state.rol="planta";render()}},"Entrar como Planta"),
+    h("div",{style:{fontSize:"11px",color:"#5A5347",margin:"12px 0"}},"— o —"),
+    h("div",{style:{fontSize:"12px",color:"#8A8070",marginBottom:"8px"}},"Acceso Diego"),
+  );
+  const row = h("div",{style:{display:"flex",gap:"8px"}});
+  const pinInp = h("input",{type:"password",inputMode:"numeric",maxLength:"4",placeholder:"PIN",className:"inp inp-pin",value:state.pinInput});
+  pinInp.addEventListener("input", e => { state.pinInput = e.target.value; state.pinError = false; });
+  pinInp.addEventListener("keydown", e => { if(e.key==="Enter"){if(state.pinInput===PIN_DIEGO){state.rol="diego";render()}else{state.pinError=true;render()}} });
+  const pinBtn = h("button",{className:"btn-sm",style:{background:"#C9A84C",color:"#0D0B07"},onClick:()=>{if(state.pinInput===PIN_DIEGO){state.rol="diego";render()}else{state.pinError=true;render()}}},"Entrar");
+  row.append(pinInp, pinBtn);
+  wrap.appendChild(row);
+  if (state.pinError) wrap.appendChild(h("div",{style:{fontSize:"11px",color:"#C05252",marginTop:"4px"}},"PIN incorrecto"));
+  app.appendChild(wrap);
+}
+
+/* ═══ INICIO ═══ */
+function renderInicio(isDiego) {
+  app.appendChild(makeHeader("Inicio", false));
+  const body = h("div",{className:"app-body"});
+
+  // Mensaje de Diego
+  const msgCard = h("div",{className:"msg-card",onClick:()=>{if(isDiego){state.vista="mensaje";render()}}},
+    h("div",{style:{fontSize:"10px",letterSpacing:".15em",color:"#C9A84C",textTransform:"uppercase",marginBottom:"6px"}}, "Mensaje de Diego" + (isDiego ? " · Tocar para editar" : "")),
+    h("div",{style:{fontSize:"13px",lineHeight:"1.5"}}, state.mensaje || "Sin mensaje")
+  );
+  body.appendChild(msgCard);
+
+  // Menu
+  const grid = h("div",{className:"grid-2"});
+  grid.appendChild(h("button",{className:"btn-menu",onClick:()=>{state.vista="reporte";render()}}, h("span",{style:{fontSize:"18px"}},"📋"), h("span",null,"Reporte diario")));
+  grid.appendChild(h("button",{className:"btn-menu",onClick:()=>{state.vista="herramientas";render()}}, h("span",{style:{fontSize:"18px"}},"🔧"), h("span",null,"Herramientas")));
+  grid.appendChild(h("button",{className:"btn-menu",onClick:()=>{state.vista="aseo";render()}}, h("span",{style:{fontSize:"18px"}},"🧹"), h("span",null,"Orden y aseo")));
+  if (isDiego) {
+    grid.appendChild(h("button",{className:"btn-menu",onClick:()=>{state.vista="mensaje";render()}}, h("span",{style:{fontSize:"18px"}},"📢"), h("span",null,"Mi mensaje")));
+  }
+  body.appendChild(grid);
+
+  // Projects
+  const sorted = [...state.projects].sort((a,b) => a.prioridad - b.prioridad);
+  body.appendChild(h("div",{className:"sec-title"}, `Proyectos activos · ${sorted.length}`));
+
+  if (sorted.length === 0) {
+    body.appendChild(h("div",{style:{fontSize:"13px",color:"#8A8070",textAlign:"center",padding:"24px"}}, isDiego ? "Sin proyectos. Agrega el primero." : "Sin proyectos activos."));
+  }
+
+  sorted.forEach(p => {
+    const dias = diasRestantes(p.fechaContenedor);
+    const urgente = dias <= 14;
+    const pedPend = (p.pedidos||[]).filter(x=>x.estado!=="Entregado").length;
+    const faltPend = (p.faltantes||[]).filter(x=>!x.resuelto).length;
+
+    const card = h("div",{className:"card",style:{cursor:"pointer"},onClick:()=>{state.proyectoId=p.id;state.vista="proyecto";render()}},
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"8px"}},
+        h("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},
+          h("div",{className:"prio-circle"}, String(p.prioridad)),
+          h("div",null,
+            h("div",{style:{fontSize:"14px",fontWeight:"600"}}, p.cliente),
+            h("div",{style:{fontSize:"11px",color:"#8A8070"}}, p.mercado + " · " + (p.zonas||[]).join(", "))
+          )
+        ),
+        h("div",{style:{textAlign:"right"}},
+          h("div",{style:{fontSize:"18px",fontWeight:"700",color:urgente?"#C05252":"#C9A84C"}}, dias+"d"),
+          h("div",{style:{fontSize:"9px",color:"#8A8070"}},"contenedor")
+        )
+      ),
+      h("div",{className:"progress-bar",style:{marginBottom:"8px"}},
+        h("div",{className:"progress-fill",style:{width:(p.progreso||0)+"%",background:(p.progreso||0)>80?"#4CAF7D":"#C9A84C"}})
+      ),
+      h("div",{style:{display:"flex",gap:"12px",fontSize:"11px"}},
+        h("span",{style:{color:"#8A8070"}},(p.progreso||0)+"% avance"),
+        pedPend>0 ? h("span",{style:{color:"#D4894A"}},pedPend+" pendiente"+(pedPend>1?"s":"")) : null,
+        faltPend>0 ? h("span",{style:{color:"#C05252"}},faltPend+" faltante"+(faltPend>1?"s":"")) : null
+      )
+    );
+    body.appendChild(card);
+  });
+
+  // Add project button — Diego only
+  if (isDiego) {
+    body.appendChild(h("button",{className:"btn-add",style:{marginTop:"8px"},onClick:()=>{state.vista="addProject";render()}}, "+ Agregar proyecto"));
+  }
+
+  app.appendChild(body);
+}
+
+/* ═══ ADD PROJECT (Diego only) ═══ */
+function renderAddProject() {
+  app.appendChild(makeHeader("Nuevo proyecto"));
+  const body = h("div",{className:"app-body"});
+
+  let np = { cliente:"", mercado:"Puerto Rico", zonas:"", fechaContenedor:"", prioridad: state.projects.length+1 };
+
+  const mkField = (label, key, type="text", placeholder="") => {
+    const wrap = h("div",{style:{marginBottom:"12px"}});
+    wrap.appendChild(h("div",{style:{fontSize:"11px",color:"#8A8070",marginBottom:"4px"}}, label));
+    if (key === "mercado") {
+      const sel = h("select",{className:"inp"});
+      ["Puerto Rico","Aruba","Rep. Dom.","Cap Cana","Colombia","USA"].forEach(m => {
+        const opt = h("option",{value:m}, m);
+        if (m === np.mercado) opt.selected = true;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener("change", e => np.mercado = e.target.value);
+      wrap.appendChild(sel);
+    } else {
+      const inp = h("input",{type,className:"inp",placeholder,value:np[key]||""});
+      inp.addEventListener("input", e => np[key] = e.target.value);
+      wrap.appendChild(inp);
+    }
+    return wrap;
+  };
+
+  body.appendChild(mkField("Cliente","cliente","text","Nombre del cliente"));
+  body.appendChild(mkField("Mercado","mercado"));
+  body.appendChild(mkField("Zonas (separadas por coma)","zonas","text","Cocina, Vestier, Baño"));
+  body.appendChild(mkField("Fecha contenedor","fechaContenedor","date"));
+  body.appendChild(mkField("Prioridad","prioridad","number","1"));
+
+  const saveBtn = h("button",{className:"btn-gold",style:{marginTop:"12px"},onClick: async ()=>{
+    if (!np.cliente.trim() || !np.fechaContenedor) { showToast("Completa cliente y fecha"); return; }
+    const project = {
+      id: uid(),
+      cliente: np.cliente.trim(),
+      mercado: np.mercado,
+      zonas: np.zonas.split(",").map(z=>z.trim()).filter(Boolean),
+      fechaContenedor: np.fechaContenedor,
+      prioridad: Number(np.prioridad) || state.projects.length+1,
+      progreso: 0,
+      notas: "",
+      pedidos: [],
+      faltantes: [],
+      checklistDespacho: [],
+    };
+    const ref = await db.collection(COLLECTIONS.projects).add(project);
+    project._docId = ref.id;
+    state.projects.push(project);
+    state.vista = "inicio";
+    showToast("Proyecto creado");
+  }}, "Guardar proyecto");
+  body.appendChild(saveBtn);
+
+  app.appendChild(body);
+}
+
+/* ═══ PROYECTO DETALLE ═══ */
+function renderProyecto(isDiego, p) {
+  if (!p) { state.vista="inicio"; render(); return; }
+  app.appendChild(makeHeader(p.cliente));
+  const body = h("div",{className:"app-body"});
+  const dias = diasRestantes(p.fechaContenedor);
+  const urgente = dias <= 14;
+
+  // Info
+  body.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}},
+    h("div",null,
+      h("div",{style:{fontSize:"12px",color:"#8A8070"}}, p.mercado + " · Prioridad " + p.prioridad),
+      h("div",{style:{fontSize:"12px",color:"#8A8070",marginTop:"2px"}}, (p.zonas||[]).join(", "))
+    ),
+    h("div",{style:{textAlign:"right"}},
+      h("div",{style:{fontSize:"22px",fontWeight:"700",color:urgente?"#C05252":"#C9A84C"}}, dias+"d"),
+      h("div",{style:{fontSize:"10px",color:"#8A8070"}}, "Contenedor "+fmtFecha(p.fechaContenedor))
+    )
+  ));
+
+  // Progress
+  if (isDiego) {
+    const progWrap = h("div",{style:{marginBottom:"16px"}});
+    progWrap.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#8A8070",marginBottom:"4px"}},
+      h("span",null,"Progreso"), h("span",null,(p.progreso||0)+"%")
+    ));
+    const range = h("input",{type:"range",min:"0",max:"100",step:"5",value:String(p.progreso||0)});
+    range.addEventListener("input", e => { updateProject(p.id, {progreso:Number(e.target.value)}); });
+    progWrap.appendChild(range);
+    body.appendChild(progWrap);
+  } else {
+    body.appendChild(h("div",{style:{marginBottom:"16px"}},
+      h("div",{style:{display:"flex",justifyContent:"space-between",fontSize:"11px",color:"#8A8070",marginBottom:"4px"}},
+        h("span",null,"Progreso"), h("span",null,(p.progreso||0)+"%")
+      ),
+      h("div",{className:"progress-bar"}, h("div",{className:"progress-fill",style:{width:(p.progreso||0)+"%"}}))
+    ));
+  }
+
+  // Sections
+  const sections = h("div",{style:{display:"flex",flexDirection:"column",gap:"8px"}});
+  sections.appendChild(h("button",{className:"btn-section",onClick:()=>{state.vista="pedidos";render()}},
+    h("span",null,"📦 Pedidos proveedores"),
+    h("span",{style:{fontSize:"12px",color:"#8A8070"}}, (p.pedidos||[]).length + " →")
+  ));
+  const faltPend = (p.faltantes||[]).filter(f=>!f.resuelto).length;
+  sections.appendChild(h("button",{className:"btn-section",onClick:()=>{state.vista="faltantes";render()}},
+    h("span",null,"⚠️ Faltantes"),
+    h("span",{style:{fontSize:"12px",color:faltPend>0?"#C05252":"#8A8070"}}, faltPend + " →")
+  ));
+  const chkDone = (p.checklistDespacho||[]).filter(d=>d.revisado).length;
+  const chkTotal = (p.checklistDespacho||[]).length;
+  sections.appendChild(h("button",{className:"btn-section",onClick:()=>{state.vista="despacho";render()}},
+    h("span",null,"✅ Checklist despacho"),
+    h("span",{style:{fontSize:"12px",color:"#8A8070"}}, chkDone+"/"+chkTotal+" →")
+  ));
+
+  // Add checklist item — Diego
+  if (isDiego) {
+    const addChk = h("div",{style:{marginTop:"16px"}});
+    addChk.appendChild(h("div",{style:{fontSize:"11px",color:"#8A8070",marginBottom:"6px"}},"Agregar mueble al checklist:"));
+    const chkRow = h("div",{style:{display:"flex",gap:"8px"}});
+    const chkInp = h("input",{className:"inp",placeholder:"Ej: Bajo 60cm — Cocina"});
+    const chkBtn = h("button",{className:"btn-sm",style:{background:"#C9A84C",color:"#0D0B07",flexShrink:"0"},onClick:()=>{
+      if (!chkInp.value.trim()) return;
+      updateProject(p.id, proj => ({
+        ...proj, checklistDespacho: [...(proj.checklistDespacho||[]), {id:uid(),mueble:chkInp.value.trim(),revisado:false,foto:null}]
+      }));
+      chkInp.value = "";
+      showToast("Mueble agregado");
+    }}, "+");
+    chkRow.append(chkInp, chkBtn);
+    addChk.appendChild(chkRow);
+    sections.appendChild(addChk);
+  }
+
+  body.appendChild(sections);
+  app.appendChild(body);
+}
+
+/* ═══ PEDIDOS ═══ */
+function renderPedidos(isDiego, p) {
+  if (!p) { state.vista="inicio"; render(); return; }
+  app.appendChild(makeHeader("Pedidos · " + p.cliente));
+  const body = h("div",{className:"app-body"});
+
+  (p.pedidos||[]).forEach(ped => {
+    const card = h("div",{className:"card"},
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"6px"}},
+        h("div",{style:{fontSize:"11px",color:"#C9A84C",fontWeight:"600"}}, ped.proveedor),
+        h("div",{className:"badge",style:{background:ESTADO_PEDIDO_COLOR[ped.estado]+"22",color:ESTADO_PEDIDO_COLOR[ped.estado]}}, ped.estado)
+      ),
+      h("div",{style:{fontSize:"13px",lineHeight:"1.4",marginBottom:"8px"}}, ped.descripcion)
+    );
+    if (isDiego) {
+      const chips = h("div",{style:{display:"flex",gap:"6px",flexWrap:"wrap"}});
+      ESTADO_PEDIDO.forEach(est => {
+        chips.appendChild(h("button",{className:"btn-chip",style:{background:ped.estado===est?ESTADO_PEDIDO_COLOR[est]+"33":"",color:ped.estado===est?ESTADO_PEDIDO_COLOR[est]:"#8A8070",borderColor:ped.estado===est?ESTADO_PEDIDO_COLOR[est]+"55":""},
+          onClick:()=>updateProject(p.id,proj=>({...proj,pedidos:proj.pedidos.map(x=>x.id===ped.id?{...x,estado:est}:x)}))
+        }, est));
+      });
+      card.appendChild(chips);
+    }
+    body.appendChild(card);
+  });
+
+  // New pedido — Diego only
+  if (isDiego) {
+    if (!state.showNewPedido) {
+      body.appendChild(h("button",{className:"btn-add",style:{marginTop:"8px"},onClick:()=>{state.showNewPedido=true;render()}}, "+ Agregar pedido"));
+    } else {
+      const form = h("div",{className:"card card-highlight"});
+      form.appendChild(h("div",{style:{fontSize:"11px",color:"#C9A84C",marginBottom:"8px",fontWeight:"600"}},"Nuevo pedido"));
+      const sel = h("select",{className:"inp"});
+      PROVEEDORES.forEach(pv => { const o = h("option",{value:pv},pv); if(pv===state.newPedProv) o.selected=true; sel.appendChild(o); });
+      sel.addEventListener("change", e => state.newPedProv = e.target.value);
+      form.appendChild(sel);
+      const ta = h("textarea",{className:"inp",placeholder:"Descripción del pedido...",style:{height:"60px",marginTop:"8px"}});
+      ta.value = state.newPedDesc;
+      ta.addEventListener("input", e => state.newPedDesc = e.target.value);
+      form.appendChild(ta);
+      const btns = h("div",{style:{display:"flex",gap:"8px",marginTop:"8px"}});
+      btns.appendChild(h("button",{className:"btn-sm",style:{flex:"1",background:"#C9A84C",color:"#0D0B07"},onClick:()=>{
+        if (!state.newPedDesc.trim()) return;
+        updateProject(p.id, proj=>({...proj,pedidos:[...(proj.pedidos||[]),{id:uid(),proveedor:state.newPedProv,descripcion:state.newPedDesc.trim(),estado:"Pendiente",foto:null}]}));
+        state.newPedDesc=""; state.showNewPedido=false; showToast("Pedido agregado");
+      }}, "Guardar"));
+      btns.appendChild(h("button",{className:"btn-sm",style:{flex:"1"},onClick:()=>{state.showNewPedido=false;state.newPedDesc="";render()}},"Cancelar"));
+      form.appendChild(btns);
+      body.appendChild(form);
+    }
+  }
+
+  body.appendChild(h("button",{className:"btn-back",style:{marginTop:"16px"},onClick:()=>{state.vista="proyecto";render()}},"← Volver al proyecto"));
+  app.appendChild(body);
+}
+
+/* ═══ FALTANTES ═══ */
+function renderFaltantes(isDiego, p) {
+  if (!p) { state.vista="inicio"; render(); return; }
+  app.appendChild(makeHeader("Faltantes · " + p.cliente));
+  const body = h("div",{className:"app-body"});
+
+  if ((p.faltantes||[]).length === 0) {
+    body.appendChild(h("div",{style:{fontSize:"13px",color:"#8A8070",textAlign:"center",padding:"24px"}},"Sin faltantes reportados"));
+  }
+
+  (p.faltantes||[]).forEach(f => {
+    const card = h("div",{className:"card",style:{opacity:f.resuelto?"0.5":"1"}},
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"4px"}},
+        h("div",{style:{fontSize:"11px",color:"#8A8070"}}, fmtFecha(f.fecha)),
+        f.resuelto
+          ? h("div",{style:{fontSize:"10px",color:"#4CAF7D",fontWeight:"600"}},"Resuelto ✓")
+          : isDiego ? h("button",{className:"btn-chip",style:{color:"#4CAF7D",borderColor:"#4CAF7D44"},
+              onClick:()=>updateProject(p.id,proj=>({...proj,faltantes:proj.faltantes.map(x=>x.id===f.id?{...x,resuelto:true}:x)}))
+            },"Marcar resuelto") : null
+      ),
+      h("div",{style:{fontSize:"13px",lineHeight:"1.4"}}, f.texto)
+    );
+    body.appendChild(card);
+  });
+
+  // Report faltante — everyone
+  const form = h("div",{className:"card card-highlight",style:{marginTop:"8px"}});
+  form.appendChild(h("div",{style:{fontSize:"11px",color:"#C9A84C",marginBottom:"8px",fontWeight:"600"}},"Reportar faltante"));
+  const ta = h("textarea",{className:"inp",placeholder:"Qué falta o qué problema hay...",style:{height:"60px"}});
+  ta.value = state.nuevoFaltante;
+  ta.addEventListener("input", e => state.nuevoFaltante = e.target.value);
+  form.appendChild(ta);
+  form.appendChild(h("button",{className:"btn-gold",style:{marginTop:"8px"},onClick:()=>{
+    if (!state.nuevoFaltante.trim()) return;
+    updateProject(p.id, proj=>({...proj,faltantes:[...(proj.faltantes||[]),{id:uid(),texto:state.nuevoFaltante.trim(),foto:null,fecha:new Date().toISOString().slice(0,10),resuelto:false}]}));
+    state.nuevoFaltante=""; showToast("Faltante reportado");
+  }}, "Reportar"));
+  body.appendChild(form);
+
+  body.appendChild(h("button",{className:"btn-back",style:{marginTop:"16px"},onClick:()=>{state.vista="proyecto";render()}},"← Volver al proyecto"));
+  app.appendChild(body);
+}
+
+/* ═══ CHECKLIST DESPACHO ═══ */
+function renderDespacho(isDiego, p) {
+  if (!p) { state.vista="inicio"; render(); return; }
+  app.appendChild(makeHeader("Despacho · " + p.cliente));
+  const body = h("div",{className:"app-body"});
+  const items = p.checklistDespacho || [];
+  const done = items.filter(d=>d.revisado).length;
+
+  body.appendChild(h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}},
+    h("div",{style:{fontSize:"13px",color:"#8A8070"}}, "Revisados: "+done+"/"+items.length),
+    h("div",{style:{fontSize:"13px",fontWeight:"600",color:done===items.length?"#4CAF7D":"#D4894A"}},
+      done===items.length ? "Listo para despacho ✓" : "Faltan "+(items.length-done))
+  ));
+
+  items.forEach(item => {
+    const card = h("div",{className:"card",style:{display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px"}},
+      h("button",{className:"check-box"+(item.revisado?" checked":""),onClick:()=>updateProject(p.id,proj=>({
+        ...proj,checklistDespacho:proj.checklistDespacho.map(x=>x.id===item.id?{...x,revisado:!x.revisado}:x)
+      }))}, item.revisado ? "✓" : ""),
+      h("div",{style:{flex:"1",fontSize:"13px",color:item.revisado?"#8A8070":"#F5F0E8",textDecoration:item.revisado?"line-through":"none"}}, item.mueble)
+    );
+    body.appendChild(card);
+  });
+
+  if (items.length === 0) {
+    body.appendChild(h("div",{style:{fontSize:"13px",color:"#8A8070",textAlign:"center",padding:"24px"}}, isDiego ? "Agrega muebles desde el detalle del proyecto." : "Sin muebles en checklist."));
+  }
+
+  body.appendChild(h("button",{className:"btn-back",style:{marginTop:"16px"},onClick:()=>{state.vista="proyecto";render()}},"← Volver al proyecto"));
+  app.appendChild(body);
+}
+
+/* ═══ REPORTE DIARIO ═══ */
+function renderReporte(isDiego) {
+  app.appendChild(makeHeader("Reporte diario"));
+  const body = h("div",{className:"app-body"});
+
+  // Write — planta only
+  if (!isDiego) {
+    const form = h("div",{className:"card card-highlight",style:{marginBottom:"16px"}});
+    form.appendChild(h("div",{style:{fontSize:"11px",color:"#C9A84C",marginBottom:"8px",fontWeight:"600"}},"¿Qué se hizo hoy?"));
+    const ta = h("textarea",{className:"inp",placeholder:"Resumen del día...",style:{height:"70px"}});
+    ta.value = state.nuevoReporte;
+    ta.addEventListener("input", e => state.nuevoReporte = e.target.value);
+    form.appendChild(ta);
+    form.appendChild(h("button",{className:"btn-gold",style:{marginTop:"8px"},onClick:async ()=>{
+      if (!state.nuevoReporte.trim()) return;
+      await addReporte(state.nuevoReporte.trim(), "Planta");
+      state.nuevoReporte = ""; showToast("Reporte enviado");
+    }}, "Enviar reporte"));
+    body.appendChild(form);
+  } else {
+    body.appendChild(h("div",{style:{fontSize:"12px",color:"#8A8070",marginBottom:"12px"}},"Reportes de planta"));
+  }
+
+  state.reportes.forEach(r => {
+    body.appendChild(h("div",{className:"card"},
+      h("div",{style:{display:"flex",justifyContent:"space-between",marginBottom:"4px"}},
+        h("div",{style:{fontSize:"11px",fontWeight:"600",color:"#C9A84C"}}, r.autor),
+        h("div",{style:{fontSize:"11px",color:"#8A8070"}}, fmtFecha(r.fecha))
+      ),
+      h("div",{style:{fontSize:"13px",lineHeight:"1.5"}}, r.texto)
+    ));
+  });
+
+  if (state.reportes.length === 0) {
+    body.appendChild(h("div",{style:{fontSize:"13px",color:"#8A8070",textAlign:"center",padding:"24px"}},"Sin reportes aún"));
+  }
+
+  app.appendChild(body);
+}
+
+/* ═══ MENSAJE DE DIEGO ═══ */
+function renderMensaje() {
+  app.appendChild(makeHeader("Mi mensaje"));
+  const body = h("div",{className:"app-body"});
+  body.appendChild(h("div",{style:{fontSize:"12px",color:"#8A8070",marginBottom:"12px"}},"Este mensaje lo ven Wilfer y Pablo al abrir la app."));
+  const ta = h("textarea",{className:"inp",style:{height:"120px",fontSize:"14px"}});
+  ta.value = state.msgDraft;
+  ta.addEventListener("input", e => state.msgDraft = e.target.value);
+  body.appendChild(ta);
+  body.appendChild(h("button",{className:"btn-gold",style:{marginTop:"12px"},onClick:async ()=>{
+    await saveMensaje(state.msgDraft);
+    showToast("Mensaje actualizado");
+  }}, "Guardar mensaje"));
+  app.appendChild(body);
+}
+
+/* ═══ HERRAMIENTAS ═══ */
+function renderHerramientas(isDiego) {
+  app.appendChild(makeHeader("Herramientas"));
+  const body = h("div",{className:"app-body"});
+
+  state.herramientas.forEach(tool => {
+    const card = h("div",{className:"card"},
+      h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
+        h("div",{style:{fontSize:"14px",fontWeight:"600"}}, tool.nombre),
+        h("div",{className:"badge",style:{background:HERRAMIENTA_COLOR[tool.estado]+"22",color:HERRAMIENTA_COLOR[tool.estado]}}, tool.estado)
+      )
+    );
+    if (tool.solicitud) card.appendChild(h("div",{style:{fontSize:"12px",color:"#D4894A",marginTop:"4px"}},"⚠️ "+tool.solicitud));
+
+    // Planta can change status
+    if (!isDiego) {
+      const chips = h("div",{style:{display:"flex",gap:"6px",marginTop:"8px",flexWrap:"wrap"}});
+      HERRAMIENTA_ESTADO.forEach(est => {
+        chips.appendChild(h("button",{className:"btn-chip",style:{fontSize:"10px",background:tool.estado===est?HERRAMIENTA_COLOR[est]+"33":"",color:tool.estado===est?HERRAMIENTA_COLOR[est]:"#8A8070",borderColor:tool.estado===est?HERRAMIENTA_COLOR[est]+"55":""},
+          onClick:()=>{
+            state.herramientas = state.herramientas.map(x=>x.id===tool.id?{...x,estado:est}:x);
+            saveHerramientas();
+            render();
+          }
+        }, est));
+      });
+      card.appendChild(chips);
+
+      // Solicitud input
+      const solRow = h("div",{style:{display:"flex",gap:"6px",marginTop:"8px"}});
+      const solInp = h("input",{className:"inp",placeholder:"Solicitar reemplazo o mantenimiento...",value:tool.solicitud||"",style:{fontSize:"12px"}});
+      solInp.addEventListener("input", e => {
+        state.herramientas = state.herramientas.map(x=>x.id===tool.id?{...x,solicitud:e.target.value}:x);
+      });
+      solInp.addEventListener("change", () => saveHerramientas());
+      solRow.appendChild(solInp);
+      card.appendChild(solRow);
+    }
+
+    body.appendChild(card);
+  });
+
+  app.appendChild(body);
+}
+
+/* ═══ ORDEN Y ASEO ═══ */
+function renderAseo() {
+  app.appendChild(makeHeader("Orden y aseo"));
+  const body = h("div",{className:"app-body"});
+  const done = state.aseo.filter(a=>a.checked).length;
+
+  const topBar = h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}});
+  topBar.appendChild(h("div",{style:{fontSize:"13px",color:"#8A8070"}}, done+"/"+state.aseo.length+" completado"));
+  if (done === state.aseo.length && state.aseo.length > 0) topBar.appendChild(h("div",{style:{fontSize:"13px",color:"#4CAF7D",fontWeight:"600"}},"Todo listo ✓"));
+  topBar.appendChild(h("button",{className:"btn-chip",style:{color:"#D4894A",borderColor:"#D4894A44"},onClick:()=>{
+    state.aseo = state.aseo.map(a=>({...a,checked:false}));
+    saveAseo();
+    render();
+  }},"Reiniciar"));
+  body.appendChild(topBar);
+
+  state.aseo.forEach(item => {
+    body.appendChild(h("div",{className:"card",style:{display:"flex",alignItems:"center",gap:"12px",padding:"12px 14px"}},
+      h("button",{className:"check-box"+(item.checked?" checked":""),onClick:()=>{
+        state.aseo = state.aseo.map(a=>a.id===item.id?{...a,checked:!a.checked}:a);
+        saveAseo();
+        render();
+      }}, item.checked ? "✓" : ""),
+      h("div",{style:{flex:"1",fontSize:"13px",color:item.checked?"#8A8070":"#F5F0E8"}}, item.item)
+    ));
+  });
+
+  app.appendChild(body);
+}
+
+/* ─── INIT ─── */
+initFirebase();
+</script>
+</body>
+</html>
